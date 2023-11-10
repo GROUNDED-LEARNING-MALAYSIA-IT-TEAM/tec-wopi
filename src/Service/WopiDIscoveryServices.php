@@ -7,6 +7,7 @@ namespace EaglenavigatorSystem\Wopi\Service;
 use Cake\Utility\Xml;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Exception\InternalErrorException; // Import the exception class
+use SimpleXMLElement;
 
 class WopiDiscoveryService
 {
