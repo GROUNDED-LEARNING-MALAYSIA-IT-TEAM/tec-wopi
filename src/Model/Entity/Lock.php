@@ -4,21 +4,21 @@ namespace EaglenavigatorSystem\Wopi\Model\Entity;
 use Cake\ORM\Entity;
 
 /**
- * WopiFile Entity
+ * Lock Entity
  *
  * @property int $id
- * @property string $file_uuid
- * @property string $version
- * @property string $file_extension
- * @property int $user_id
- * @property string|resource $file_data
- * @property string $file_path
+ * @property int $file_id
+ * @property string $lock_id
+ * @property int $locked_by_user_id
+ * @property \Cake\I18n\FrozenTime $expiration_time
  * @property \Cake\I18n\FrozenTime $created_at
  * @property \Cake\I18n\FrozenTime $updated_at
  *
- * @property \EaglenavigatorSystem\Wopi\Model\Entity\User $user
+ * @property \EaglenavigatorSystem\Wopi\Model\Entity\WopiFile $file
+ * @property \EaglenavigatorSystem\Wopi\Model\Entity\Lock[] $locks
+ * @property \App\Model\Entity\UserManagement $user_management
  */
-class WopiFile extends Entity
+class Lock extends Entity
 {
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
@@ -30,14 +30,14 @@ class WopiFile extends Entity
      * @var array
      */
     protected $_accessible = [
-        'file_uuid' => true,
-        'version' => true,
-        'file_extension' => true,
-        'user_id' => true,
-        'file_data' => true,
-        'file_path' => true,
+        'file_id' => true,
+        'lock_id' => true,
+        'locked_by_user_id' => true,
+        'expiration_time' => true,
         'created_at' => true,
         'updated_at' => true,
-        'user' => true,
+        'file' => true,
+        'locks' => true,
+        'user_management' => true,
     ];
 }

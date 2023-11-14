@@ -5,9 +5,9 @@ use Cake\Http\ServerRequest;
 use Cake\Http\Response;
 
 /**
- * ValidateProof middleware
+ * WopiOperation middleware
  */
-class ValidateProofMiddleware
+class WopiOperationMiddleware
 {
     /**
      * Invoke method.
@@ -19,6 +19,15 @@ class ValidateProofMiddleware
      */
     public function __invoke(ServerRequest $request, Response $response, $next)
     {
+        //check if controller request is for wopi operation
+        $plugin = $request->getParam('plugin');
+
+        if ($plugin === 'EaglenavigatorSystem/Wopi'){
+
+            //load wopi component
+            $request->loadComponent('EaglenavigatorSystem/Wopi.Wopi');
+        }
+
         return $next($request, $response);
     }
 }

@@ -3,12 +3,10 @@ namespace EaglenavigatorSystem\Wopi\Controller;
 
 use EaglenavigatorSystem\Wopi\Controller\AppController;
 
-use function PHPSTORM_META\map;
-
 /**
  * DeleteFile Controller
  */
-class DeleteFileController extends AppController
+class EditFileController extends AppController
 {
     /**
      * Index method

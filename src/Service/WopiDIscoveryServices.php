@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace EaglenavigatorSystem\Wopi\Service;
 
+use Cake\Cache\Cache;
 use Cake\Utility\Xml;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Exception\InternalErrorException; // Import the exception class
+use Cake\Http\Exception\NotFoundException;
+use Cake\Log\Log;
 use SimpleXMLElement;
 
 class WopiDiscoveryService
 {
     private $xmlData; // Store the loaded XML data here
+
+    public $wopiEndpoint;
 
     public function __construct()
     {
@@ -78,8 +83,8 @@ class WopiDiscoveryService
                 $actionAttributes = $action->attributes();
 
                 $extensionData = [
-                  'name' => (string) $app['name'],
-                  'favIconUrl' => (string) $app['favIconUrl']
+                    'name' => (string) $app['name'],
+                    'favIconUrl' => (string) $app['favIconUrl']
                 ];
 
                 if ($actionAttributes) {
@@ -140,7 +145,7 @@ class WopiDiscoveryService
                 $actionAttributes = $action->attributes();
 
                 $mimeTypeData = [
-                  'name' => (string) $app['name']
+                    'name' => (string) $app['name']
                 ];
 
                 if ($actionAttributes) {
@@ -222,5 +227,28 @@ class WopiDiscoveryService
     {
         $value = $this->queryXPath('//proof-key/@oldexponent')[0] ?? null;
         return (string) $value;
+    }
+
+    private function getWopiEndpoints(): SimpleXMLElement
+    {
+        $wopiXML = Cache::read('wopiDiscoveryData', 'long_term');
+
+        if (!$wopiXML) {
+            // Fetch and parse discovery data
+            $wopiXML = $this->fetchDiscoveryData();
+            if ($wopiXML) {
+                Cache::write('wopiDiscoveryData', $wopiXML, 'long_term');
+            } else {
+                // Handle the case where discovery data could not be fetched
+                Log::error(__FUNCTION__ . " : Failed discovering office end points");
+                throw new WopiDiscoveryException("Failed discovering office end points");
+            }
+        } else {
+            Log::debug(__FUNCTION__ . " : Got discovery end points from cache");
+        }
+
+        $this->wopiEndpoint = new SimpleXMLElement($wopiXML);
+
+        return $this->wopiEndpoint;
     }
 }
