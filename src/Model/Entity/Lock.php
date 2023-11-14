@@ -8,6 +8,7 @@ use Cake\ORM\Entity;
  *
  * @property int $id
  * @property int $file_id
+ * @property bool $locked
  * @property string $lock_id
  * @property int $locked_by_user_id
  * @property \Cake\I18n\FrozenTime $expiration_time
@@ -31,6 +32,7 @@ class Lock extends Entity
      */
     protected $_accessible = [
         'file_id' => true,
+        'locked' => true,
         'lock_id' => true,
         'locked_by_user_id' => true,
         'expiration_time' => true,

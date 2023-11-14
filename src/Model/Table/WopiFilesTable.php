@@ -5,6 +5,7 @@ namespace EaglenavigatorSystem\Wopi\Model\Table;
 use Cake\Core\Configure;
 use Cake\Event\Event;
 use Cake\I18n\FrozenTime;
+use Cake\ORM\Entity;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Utility\Security;
@@ -45,7 +46,7 @@ class WopiFilesTable extends Table
         $this->setDisplayField('id');
         $this->setPrimaryKey('id');
 
-        $this->belongsTo('Users', [
+        $this->belongsTo('UserManagements', [
             'foreignKey' => 'user_id',
             'joinType' => 'INNER',
             'className' => 'UserManagements',
@@ -173,13 +174,21 @@ class WopiFilesTable extends Table
         $data['file_uuid'] = $this->generateFileuuid();
         $data['file_path'] = $this->generateFilePath($data['file_uuid'], $data['file_extension']);
 
-        //using blob - file_data write to path
-        $file = fopen($data['file_path'], 'w');
-        fwrite($file, $data['file_data']);
+        //cp file_data to file_path
+        file_put_contents($data['file_path'], file_get_contents($data['file_source']));
 
+        //using blob - file_data write to path
+        $blob = file_get_contents($data['file_path']);
+
+        $data['file_data'] = $blob;
+
+        dump('--- data --');
+        dump($data);
         $wopiFile = $this->newEntity($data);
+        $wopiFile->version = $this->generateFileVersion($wopiFile);
         $wopiFile = $this->save($wopiFile);
 
+        dump($wopiFile);
         return $wopiFile;
     }
 
@@ -205,8 +214,8 @@ class WopiFilesTable extends Table
     public function generateFilePath($file_uuid, $file_extension)
     {
         //generate file path in tmp
-        $base = WWW_ROOT . 'tmp' . DS . 'wopi' . DS;
-        $file_path = $base . DS . $file_uuid . '.' . $file_extension;
+        $base = TMP . 'wopi' . DS;
+        $file_path = $base . $file_uuid . '.' . $file_extension;
 
         //check if directory exists
         if (!file_exists($base)) {
@@ -230,18 +239,18 @@ class WopiFilesTable extends Table
         $validVersioning = Configure::read('Wopi.valid_versioning');
 
         if (!$versioning) {
-            throw new FileHandingException('Versioning configuration not found',500, null);
+            throw new FileHandingException('Versioning configuration not found', 500, null);
         }
 
         if (!in_array($versioning, $validVersioning)) {
-            throw new FileHandingException('Invalid versioning configuration',500, null);
+            throw new FileHandingException('Invalid versioning configuration', 500, null);
         }
 
         if ($versioning == 'timestamp') {
             //use format "c"
             $date = new FrozenTime();
             $version = $date->format('c');
-        } elseif($versioning == 'hash') {
+        } elseif ($versioning == 'hash') {
             $version = Security::randomBytes(255);
         } elseif ($versioning == 'increment') {
             $version = $this->getLatestVersionForIncremental($wopiFile);
@@ -274,19 +283,13 @@ class WopiFilesTable extends Table
         return $latestVersion->version;
     }
 
-    public function beforeSave(Event $event, $entity, $options)
+    public function beforeSave(Event $event, Entity $entity, $options)
     {
-        if ($entity->isNew()) {
-            $entity->created_at = date('Y-m-d H:i:s');
-            //set version to 1 if new else increment version
-            //Version
-// The current version of the file based on the server's file version schema, as a string. This value must change when the file changes, and version values must never repeat for a given file.
+        $entity->created_at = date('Y-m-d H:i:s');
+        $entity->version = $this->generateFileVersion($entity);
 
-// Important
-
-// This value must be a string, even if numbers are used to represent versions. For example, if a file is versioned using a decimal number, such as 1.1, the value must be a string, such as "1.1". If a file is versioned using a date, such as 2015-12-15, the value must be a string, such as "2015-12-15".
-            $entity->version = $this->generateFileVersion($entity);
-        }
         $entity->updated_at = date('Y-m-d H:i:s');
+
+        return true;
     }
 }

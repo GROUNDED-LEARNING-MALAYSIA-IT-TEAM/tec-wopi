@@ -36,3 +36,10 @@ if (file_exists($root . '/config/bootstrap.php')) {
 
     return;
 }
+
+
+if (file_exists($root . '/config/wopi.php')) {
+    require $root . '/config/wopi.php';
+
+    return;
+}

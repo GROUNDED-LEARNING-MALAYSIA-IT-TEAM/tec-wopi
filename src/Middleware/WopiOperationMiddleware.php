@@ -19,6 +19,9 @@ class WopiOperationMiddleware
      */
     public function __invoke(ServerRequest $request, Response $response, $next)
     {
+        if (strpos($request->getUri()->getPath(), '/wopi/files') === false) {
+            return $next($request, $response);
+        }
         //check if controller request is for wopi operation
         $plugin = $request->getParam('plugin');
 

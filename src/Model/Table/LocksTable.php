@@ -7,6 +7,7 @@ use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 use EaglenavigatorSystem\Wopi\Exception\LockOperationFailedException;
+use EaglenavigatorSystem\Wopi\Exception\LockMismatchException;
 use Exception;
 use Cake\Log\LogTrait;
 
@@ -54,19 +55,10 @@ class LocksTable extends Table
                 'dependent' => true,
             ]
         );
-        $this->belongsTo('Locks', [
-            'foreignKey' => 'lock_id',
-            'joinType' => 'INNER',
-            'className' => 'EaglenavigatorSystem/Wopi.Locks',
-        ]);
         $this->belongsTo('UserManagements', [
             'foreignKey' => 'locked_by_user_id',
             'joinType' => 'INNER',
             'className' => 'UserManagements',
-        ]);
-        $this->hasMany('Locks', [
-            'foreignKey' => 'lock_id',
-            'className' => 'EaglenavigatorSystem/Wopi.Locks',
         ]);
     }
 
@@ -115,6 +107,8 @@ class LocksTable extends Table
 
         //lock id must be unique per file
         $rules->add(
+            //on create
+
             function ($entity, $options) {
                 $lockId = $entity->lock_id;
                 $fileId = $entity->file_id;
@@ -133,6 +127,8 @@ class LocksTable extends Table
             [
                 'errorField' => 'lock_id',
                 'message' => 'Lock id already exists for this file',
+                //only on create
+                'on' => 'create',
             ]
         );
 
@@ -206,6 +202,7 @@ class LocksTable extends Table
             // Create or update the lock
             $data = [
                 'file_id' => $fileId,
+                'locked' => true,
                 'lock_id' => $this->generateLockId(),
                 'locked_by_user_id' => $userId,
                 'expiration_time' => $this->generateExpirationDate(),
@@ -238,11 +235,24 @@ class LocksTable extends Table
     {
         try {
             $lock = $this->find()
-                ->where(['file_id' => $fileId, 'lock_id' => $lockId])
+                ->where(['file_id' => $fileId])
                 ->first();
 
-            if ($lock && $lock->locked_by_user_id === $userId && $this->delete($lock)) {
-                return true;
+            if ($lock->lock_id !== $lockId) {
+
+                $this->log('lock id mismatch', 'error');
+
+                throw new LockMismatchException('Lock id mismatch');
+            }
+
+            if ($lock && $lock->locked_by_user_id === $userId && $lock->locked == true) {
+
+                //unlock file
+                $lock->locked = false;
+
+                if ($this->save($lock)) {
+                    return true;
+                }
             }
 
             return false;

@@ -1,4 +1,5 @@
 <?php
+
 namespace EaglenavigatorSystem\Wopi\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
@@ -23,10 +24,14 @@ class WopiDiscoveryMiddleware
      */
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response, $next)
     {
-           // Check if discovery data is cached
-           $discoveryData = Cache::read('wopiDiscoveryData', 'long_term');
-           if (!$discoveryData) {
-               // Fetch and parse discovery data
+        // Check if discovery data is cached
+        //if request not for wopi pathj. in url got '/wopi; ,then return next if no /wopi
+        if (strpos($request->getUri()->getPath(), '/wopi/files') === false) {
+            return $next($request, $response);
+        }
+        $discoveryData = Cache::read('wopiDiscoveryData', 'long_term');
+        if (!$discoveryData) {
+            // Fetch and parse discovery data
             $discoveryData = $this->fetchDiscoveryData();
             if ($discoveryData) {
                 Cache::write('wopiDiscoveryData', $discoveryData, 'long_term');
@@ -35,15 +40,15 @@ class WopiDiscoveryMiddleware
                 // This could involve logging the error and/or setting an error response
                 Log::error(__FUNCTION__ . " : Unable to fetch discovery data");
             }
-           }
+        }
 
-           // Add discovery data to request attribute (optional)
-           // Add discovery data to request attribute (optional)
+        // Add discovery data to request attribute (optional)
+        // Add discovery data to request attribute (optional)
         if ($discoveryData) {
             $request = $request->withAttribute('wopiDiscoveryData', $discoveryData);
         }
 
-           return $next($request, $response);
+        return $next($request, $response);
     }
 
     private function fetchDiscoveryData()

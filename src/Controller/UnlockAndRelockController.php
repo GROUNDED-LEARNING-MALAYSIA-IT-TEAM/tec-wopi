@@ -16,5 +16,7 @@ class UnlockAndRelockController extends AppController
      */
     public function index()
     {
+        //method only accepts post requests
+        $this->request->allowMethod(['post']);
     }
 }
