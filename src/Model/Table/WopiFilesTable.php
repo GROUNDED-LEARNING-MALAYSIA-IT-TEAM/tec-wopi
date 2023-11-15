@@ -70,6 +70,17 @@ class WopiFilesTable extends Table
             ->notEmptyFile('file_uuid');
 
         $validator
+        ->scalar('file_name')
+        ->maxLength('file_name', 255)
+        ->requirePresence('file_name', 'create')
+        ->notEmptyFile('file_name');
+
+        $validator
+            ->integer('file_size')
+            ->requirePresence('file_size', 'create')
+            ->notEmptyFile('file_size');
+
+        $validator
             ->scalar('version')
             ->maxLength('version', 255)
             ->requirePresence('version', 'create')

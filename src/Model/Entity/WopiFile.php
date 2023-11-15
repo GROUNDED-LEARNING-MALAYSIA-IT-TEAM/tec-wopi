@@ -1,4 +1,5 @@
 <?php
+
 namespace EaglenavigatorSystem\Wopi\Model\Entity;
 
 use Cake\ORM\Entity;
@@ -8,6 +9,8 @@ use Cake\ORM\Entity;
  *
  * @property int $id
  * @property string $file_uuid
+  * @property string $file_name
+ * @property int $file_size
  * @property string $version
  * @property string $file_extension
  * @property int $user_id
@@ -31,6 +34,8 @@ class WopiFile extends Entity
      */
     protected $_accessible = [
         'file_uuid' => true,
+        'file_name' => true,
+        'file_size' => true,
         'version' => true,
         'file_extension' => true,
         'user_id' => true,
@@ -40,4 +45,7 @@ class WopiFile extends Entity
         'updated_at' => true,
         'user' => true,
     ];
+
+
+
 }
