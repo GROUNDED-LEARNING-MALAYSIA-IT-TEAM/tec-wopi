@@ -39,12 +39,19 @@ class WopiFile extends Entity
         'version' => true,
         'file_extension' => true,
         'user_id' => true,
-        'file_data' => true,
         'file_path' => true,
+
+        'version' => true,
         'created_at' => true,
         'updated_at' => true,
         'user' => true,
     ];
+
+    protected $_hidden = [
+        'file_data'
+    ];
+
+
 
 
 

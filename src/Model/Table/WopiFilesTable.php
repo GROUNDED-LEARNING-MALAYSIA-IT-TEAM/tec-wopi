@@ -190,7 +190,8 @@ class WopiFilesTable extends Table
         $blob = file_get_contents($data['file_path']);
 
         $data['file_data'] = $blob;
-        $wopiFile = $this->newEntity($data);
+        //create new entity and unlock file_data field
+        $wopiFile = $this->newEntity($data, ['accessibleFields' => ['file_data' => true]]);
         $wopiFile->version = $this->generateFileVersion($wopiFile);
         $wopiFile = $this->save($wopiFile);
 
@@ -236,12 +237,12 @@ class WopiFilesTable extends Table
         return $file_path;
     }
 
-    private function generateFileVersion(WopiFile $wopiFile)
+    public function generateFileVersion(WopiFile $wopiFile)
     {
         //generate file version maxlength 255
         //read configuration
         $versioning = Configure::read('Wopi.versioning');
-        $validVersioning = Configure::read('Wopi.valid_versioning');
+        $validVersioning = Configure::read('Wopi.valid_versioning_type');
 
         if (!$versioning) {
             throw new FileHandingException('Versioning configuration not found', 500, null);
