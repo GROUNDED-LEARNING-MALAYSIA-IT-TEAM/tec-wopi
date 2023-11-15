@@ -14,8 +14,6 @@ use Cake\Validation\Validator;
 use EaglenavigatorSystem\Wopi\Exception\FileHandingException;
 use EaglenavigatorSystem\Wopi\Model\Entity\WopiFile;
 
-
-
 /**
  * WopiFiles Model
  *
@@ -181,14 +179,10 @@ class WopiFilesTable extends Table
         $blob = file_get_contents($data['file_path']);
 
         $data['file_data'] = $blob;
-
-        dump('--- data --');
-        dump($data);
         $wopiFile = $this->newEntity($data);
         $wopiFile->version = $this->generateFileVersion($wopiFile);
         $wopiFile = $this->save($wopiFile);
 
-        dump($wopiFile);
         return $wopiFile;
     }
 
