@@ -49,6 +49,15 @@ class WopiFilesTable extends Table
             'joinType' => 'INNER',
             'className' => 'UserManagements',
         ]);
+
+        $this->HasMany(
+            'Locks',
+            [
+                'foreignKey' => 'file_id',
+                'className' => 'EaglenavigatorSystem/Wopi.Locks',
+                'dependent' => true,
+            ]
+        );
     }
 
     /**
@@ -297,5 +306,35 @@ class WopiFilesTable extends Table
         $entity->updated_at = date('Y-m-d H:i:s');
 
         return true;
+    }
+
+    public function deleteFile(int $fileId)
+    {
+
+        $delete = function () use ($fileId) {
+            $wopiFile = $this->get($fileId);
+
+            $resultDeleteLock = $this->Locks->deleteAll(['file_id' => $fileId]);
+
+            if (!$resultDeleteLock) {
+                return false;
+            }
+
+            if(file_exists($wopiFile->file_path)) {
+                $deleteFile = unlink($wopiFile->file_path);
+            }
+
+            if (!$deleteFile) {
+                return false;
+            }
+
+
+            $wopiFile = $this->delete($wopiFile);
+
+            return $wopiFile;
+
+        };
+
+        return $this->getConnection()->transactional($delete);
     }
 }

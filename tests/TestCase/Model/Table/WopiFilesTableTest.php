@@ -14,7 +14,6 @@ use EaglenavigatorSystem\Wopi\Model\Table\WopiFilesTable;
  */
 class WopiFilesTableTest extends TestCase
 {
-
     /**
      * Test subject
      *
@@ -29,6 +28,8 @@ class WopiFilesTableTest extends TestCase
      */
     public $fixtures = [
         'plugin.EaglenavigatorSystem/Wopi.WopiFiles',
+        'plugin.EaglenavigatorSystem/Wopi.Locks',
+
         'app.Users',
     ];
 
@@ -309,5 +310,34 @@ class WopiFilesTableTest extends TestCase
         $this->assertNotEmpty($entity->created_at);
         $this->assertNotEmpty($entity->updated_at);
         $this->assertNotEmpty($entity->version);
+
+    }
+
+    public function testDeleteFile()
+    {
+        $id = 1;
+
+        $fileContent = 'Therefore, WOPI locks must:
+
+            Be associated with a single file.
+
+            Contain a lock ID of maximum length 1024 ASCII characters.
+
+            Prevent all changes to that file unless a proper lock ID is provided.
+
+            Expire after 30 minutes unless refreshed. For more information, see RefreshLock.
+
+            Not be associated with a particular user.';
+
+        $target = TEST_FILE_PATH . 'test_d.txt';
+
+        //if file target do not exist, create it
+        //if file target exist, overwrite it
+        file_put_contents($target, $fileContent);
+
+
+        $result = $this->WopiFiles->deleteFile($id);
+
+        $this->assertTrue($result);
     }
 }
