@@ -10,6 +10,7 @@ use Cake\ORM\Table;
 use Cake\Routing\Route\Route;
 use Cake\Routing\Router;
 use Cake\Routing\RouteBuilder;
+
 /**
  * Wopi component
  */
@@ -88,9 +89,9 @@ class WopiComponent extends Component
                 //if token is not valid then generate new token
                 if (!$valid) {
                     //generate token
-                   $token = bin2hex(random_bytes(16));
-                  //token generated will expire in 1 hour
-                  $tokenExpire = time() + 3600;
+                    $token = bin2hex(random_bytes(16));
+                    //token generated will expire in 1 hour
+                    $tokenExpire = time() + 3600;
                     $this->UserSessions = TableRegistry::getTableLocator()->get('UserSessions');
 
                     //add token to response header
@@ -153,9 +154,25 @@ class WopiComponent extends Component
         $this->getController()->response = $this->getController()->response->withHeader('X-WOPI-Lock', $lock);
     }
 
+    public function checkFileLock(ServerRequest $request)
+    {
+
+        //this function check file lock
+        $lockId = $request->getHeader('X-WOPI-Lock');
+
+        $fileId = $request->getPass(0);
+
+        $this->Locks = TableRegistry::getTableLocator()->get('EaglenavigatorSystem/Wopi.Locks');
+
+        return $this->Locks->checkWopiLock($lockId, $fileId);
+
+
+    }
+
     #------------------ wopi responses
 
-    public function responseGetFileInfo(ServerRequest $request, bool $operationSuccess = false){
+    public function responseGetFileInfo(ServerRequest $request, bool $operationSuccess = false)
+    {
 
         /*
 
@@ -163,7 +180,8 @@ class WopiComponent extends Component
 
     }
 
-    public function getHostEditUrl(string $sessionId,string $fileId, int $userId){
+    public function getHostEditUrl(string $sessionId, string $fileId, int $userId)
+    {
         //form edit url
 
         /**

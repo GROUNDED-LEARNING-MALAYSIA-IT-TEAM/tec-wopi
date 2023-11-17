@@ -58,6 +58,15 @@ class WopiFilesTable extends Table
                 'dependent' => true,
             ]
         );
+
+        $this->HasMany(
+            'PivotWopiFilesProjects',
+            [
+                'foreignKey' => 'wopi_file_id',
+                'className' => 'EaglenavigatorSystem/Projects.PivotWopiFilesProjects',
+                'dependent' => true,
+            ]
+        );
     }
 
     /**
@@ -79,10 +88,10 @@ class WopiFilesTable extends Table
             ->notEmptyFile('file_uuid');
 
         $validator
-        ->scalar('file_name')
-        ->maxLength('file_name', 255)
-        ->requirePresence('file_name', 'create')
-        ->notEmptyFile('file_name');
+            ->scalar('file_name')
+            ->maxLength('file_name', 255)
+            ->requirePresence('file_name', 'create')
+            ->notEmptyFile('file_name');
 
         $validator
             ->integer('file_size')
@@ -308,19 +317,25 @@ class WopiFilesTable extends Table
         return true;
     }
 
-    public function deleteFile(int $fileId)
+    public function deleteFile(int $fileId): bool
     {
 
         $delete = function () use ($fileId) {
             $wopiFile = $this->get($fileId);
 
             $resultDeleteLock = $this->Locks->deleteAll(['file_id' => $fileId]);
-
             if (!$resultDeleteLock) {
                 return false;
             }
+            //if has relation to pivot wopi files, add this line
+            $resultDeletePivot = $this->PivotWopiFilesProjects->deleteAll(['wopi_file_id' => $fileId]);
 
-            if(file_exists($wopiFile->file_path)) {
+            if (!$resultDeletePivot) {
+                return false;
+            }
+
+
+            if (file_exists($wopiFile->file_path)) {
                 $deleteFile = unlink($wopiFile->file_path);
             }
 
@@ -332,9 +347,34 @@ class WopiFilesTable extends Table
             $wopiFile = $this->delete($wopiFile);
 
             return $wopiFile;
-
         };
 
         return $this->getConnection()->transactional($delete);
+    }
+
+    public function renameFile(int $fileId, string $newFileName): bool
+    {
+
+        $rename = function () use ($fileId, $newFileName) {
+
+
+            $notunique = $this->find('all')->where(['file_name' => $newFileName , 'id !=' => $fileId ])->first();
+
+            if ($notunique) {
+                return false;
+            }
+
+
+
+            $wopiFile = $this->get($fileId);
+
+            $wopiFile->file_name = $newFileName;
+
+            $wopiFile = $this->save($wopiFile);
+
+            return $wopiFile;
+        };
+
+        return $this->getConnection()->transactional($rename);
     }
 }

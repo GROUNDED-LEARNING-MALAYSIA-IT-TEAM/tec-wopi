@@ -25,19 +25,13 @@ class SessionComponent extends Component implements SessionInterface
     //user entity
     protected UserManagement $user;
 
-    /**
-     * Magic method constructor
-     *
-     * @param WopiFile $file
-     * @param UserManagement $user
-     * @param Session $session
-     * @return void
-     */
-    public function __construct(WopiFile $file, UserManagement $user, Session $session)
+
+    public function initialize(array $config)
     {
-        $this->file = $file;
-        $this->user = $user;
-        $this->session = $session;
+        parent::initialize($config);
+        $this->session = $config['session'];
+        $this->file = $config['file'];
+        $this->user = $config['user'];
     }
 
     /**
@@ -91,14 +85,18 @@ class SessionComponent extends Component implements SessionInterface
         $attributes = [
             'AllowExternalMarketplace' => false,
             'BaseFileName' => $this->file->getName(),
+            "BreadcrumbBrandName" => "The Eagle Navigator",
+            "BreadcrumbBrandUrl" => "https://www.theeagle.center",
+            "HostEditUrl" => $this->Wopi->getHostEditUrl($this->file->id, $this->user->getId()),
             'DisablePrint' => false,
             'DisableTranslation' => false,
+            'FileNameMaxLength' => WopiFile::MAX_NAME_LENGTH,
             'FileVersionPostMessage' => true,
-            'PostMessageOrigin' => $this->session['post_message_origin'] ?? 'http://localhost',
+            'LastModifiedTime' => $this->file->updated_at->format('c'),
             'OwnerId' => (string) $this->file->getOwner(),
+            'PostMessageOrigin' => $this->session['post_message_origin'] ?? 'http://localhost',
             'ReadOnly' => $this->file->isReadonly(),
             'RestrictedWebViewOnly' => false,
-            'LastModifiedTime' => $attrs['changed']->toDateTime()->format('c'),
             'Size' => $this->file->getSize(),
             'SupportsCobalt' => false,
             'SupportsFolders' => true,
@@ -109,7 +107,6 @@ class SessionComponent extends Component implements SessionInterface
             'SupportsDeleteFile' => true,
             'SupportsUpdate' => true,
             'SupportsRename' => true,
-            'FileNameMaxLength' => AbstractNode::MAX_NAME_LENGTH,
             'UserCanAttend' => false,
             'UserCanNotWriteRelative' => false,
             'UserCanPresent' => false,

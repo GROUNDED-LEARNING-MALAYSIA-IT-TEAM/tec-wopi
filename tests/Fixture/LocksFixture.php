@@ -1,4 +1,5 @@
 <?php
+
 namespace EaglenavigatorSystem\Wopi\Test\Fixture;
 
 use Cake\TestSuite\Fixture\TestFixture;
@@ -44,8 +45,17 @@ class LocksFixture extends TestFixture
             [
                 'id' => 1,
                 'file_id' => 1,
-                'lock_id' => 'Lorem ipsum dolor sit amet',
-                'locked_by_user_id' => 1,
+                'lock_id' => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
+                'locked_by_user_id' => 495,
+                'expiration_time' => '2023-11-13 12:15:58',
+                'created_at' => '2023-11-13 12:15:58',
+                'updated_at' => '2023-11-13 12:15:58',
+            ],
+            [
+                'id' => 2,
+                'file_id' => 2,
+                'lock_id' => 'xxxxxxxxxxxxxxx7777777',
+                'locked_by_user_id' => 495,
                 'expiration_time' => '2023-11-13 12:15:58',
                 'created_at' => '2023-11-13 12:15:58',
                 'updated_at' => '2023-11-13 12:15:58',

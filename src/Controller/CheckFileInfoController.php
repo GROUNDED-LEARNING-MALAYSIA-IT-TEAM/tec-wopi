@@ -3,6 +3,7 @@
 namespace EaglenavigatorSystem\Wopi\Controller;
 
 use EaglenavigatorSystem\Wopi\Controller\AppController;
+use EaglenavigatorSystem\WOpi\Interfaces\CheckFileInfoInterface;
 
 /**
  * CheckFileInfo Controller
@@ -10,7 +11,7 @@ use EaglenavigatorSystem\Wopi\Controller\AppController;
  *
  * @method \EaglenavigatorSystem\Wopi\Model\Entity\CheckFileInfo[]|\Cake\Datasource\ResultSetInterface paginate($object = null, array $settings = [])
  */
-class CheckFileInfoController extends AppController
+class CheckFileInfoController extends AppController implements CheckFileInfoInterface
 {
     /**
      * Index method
@@ -24,15 +25,19 @@ class CheckFileInfoController extends AppController
     public function index(string $fileId)
     {
         $this->request->allowMethod(['get']);
-
+        $this->loadComponent('EaglenavigatorSystem/Wopi.Session', [
+            'file' => $this->WopiFiles->get($fileId),
+            'user' => $this->Auth->user(),
+            'session' => $this->request->getSession()
+        ]);
+        $this->loadComponent('EaglenavigatorSystem/Wopi.Wopi');
         $userId = $this->Auth->user('id');
 
-        $userName = $this->Auth->user('username');
 
 
         $token = $this->request->getQuery('access_token');
 
-        if (!$token) {
+        if (!$token || $this->Wopi->checkAccessToken($this->request)) {
 
 
             $response = $this->response->withStatus(401);
@@ -81,30 +86,13 @@ class CheckFileInfoController extends AppController
             return $response;
         }
 
-        $infoJson = array(
-            "BaseFileName" => $file->getFile_uuid(),
-            "OwnerId" => $userId,
-            "UserId" => $userId,
-            "UserFriendlyName" => $userName,
-            "Size" => $file->getSize(),
-            "Version" => $file->modified->format("c"),
-            "LastModifiedTime" => $file->modified->format("c"),
-            "UserCanWrite" => true,
-            "RestrictedWebViewOnly" => false,
-            "ReadOnly" => false,
-            "SupportsUpdate" => true,
-            "SupportsLocks" => true,
-            "SupportsGetLock" => true,
-            "SupportsExtendedLockLength" => true,
-            "SupportsCobalt" => false,
-            "SupportsFolders" => false,
-            "SupportsDeleteFile" => true,
-            "LicenseCheckForEditIsEnabled" => true,
-            "UserCanNotWriteRelative" => false,
-            "SupportsRename" => true,
-            "BreadcrumbBrandName" =>"The Eagle Navigator",
-            "BreadcrumbBrandUrl" => "https://www.theeagle.center",
-            "HostEditUrl" => $this->Wopi->getHostEditUrl($file->id, $userId);
-        );
+        $response = $this->response->withType('application/json');
+        $response = $this->response->withStatus(200);
+        $response = $this->response->withStringBody(json_encode(
+            $this->Session->getAttributes()
+        ));
+
+        return $response;
+
     }
 }

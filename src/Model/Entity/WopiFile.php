@@ -2,6 +2,9 @@
 
 namespace EaglenavigatorSystem\Wopi\Model\Entity;
 
+use App\Model\Entity\User;
+use App\Model\Entity\UserManagement;
+use Cake\I18n\FrozenTime;
 use Cake\ORM\Entity;
 
 /**
@@ -23,6 +26,7 @@ use Cake\ORM\Entity;
  */
 class WopiFile extends Entity
 {
+    public const MAX_NAME_LENGTH = 255;
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
      *
@@ -50,6 +54,106 @@ class WopiFile extends Entity
     protected $_hidden = [
         'file_data'
     ];
+
+    //virtual field
+    protected $_virtual = [
+        'may_write', //indicates if the user can write to the file
+        'read_only', //indicates if the file is read only
+    ];
+
+    public function getName()
+    {
+        return $this->file_name;
+
+    }
+
+    public function getOwner()
+    {
+        return $this->user;
+
+    }
+
+    public function getVersion()
+    {
+        return $this->version;
+
+    }
+
+    public function getSize()
+    {
+        return $this->getFileSizeForWopi();
+    }
+
+    private function getFileSizeForWopi(): int
+    {
+        return $this->file_size;
+    }
+
+    /**
+     * Get file size in human readable format
+     *
+     * @return string
+     */
+    private function convertKbToHumanReadableFilesize(): string
+    {
+        $size = $this->file_size;
+        $unit = array('b', 'kb', 'mb', 'gb', 'tb', 'pb');
+        return @round($size / pow(1024, ($i = floor(log($size, 1024)))), 2) . ' ' . $unit[$i];
+
+    }
+
+    public function getFileSizeHumanize()
+    {
+        return $this->convertKbToHumanReadableFilesize();
+    }
+
+    public function setMayWrite(UserManagement $user)
+    {
+
+        $this->may_write = $this->_getMayWrite($user);
+        return $this;
+    }
+
+    public function mayWrite(): bool
+    {
+        return $this->may_write;
+    }
+
+    public function readOnly(): bool
+    {
+        return $this->read_only;
+    }
+
+    public function getModifiedTImeFormatC()
+    {
+        return $this->updated_at;
+
+    }
+
+
+    public function isReadOnly(): bool
+    {
+        return $this->read_only;
+    }
+    /**
+     * Get may_write
+     *
+     * @return bool
+     */
+    protected function _getMayWrite(UserManagement $user): bool
+    {
+        if ($user->id == $this->user_id) {
+            $this->read_only = false;
+            return true;
+        } elseif($user->is_superuser) {
+            $this->read_only = false;
+            return true;
+        } else {
+            $this->read_only = true;
+            return false;
+        }
+
+    }
 
 
 

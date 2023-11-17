@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EaglenavigatorSystem\Wopi\Service;
 
+use EaglenavigatorSystem\Wopi\Exception\WopiDiscoveryException;
 use Cake\Cache\Cache;
 use Cake\Utility\Xml;
 use Cake\Http\Exception\BadRequestException;

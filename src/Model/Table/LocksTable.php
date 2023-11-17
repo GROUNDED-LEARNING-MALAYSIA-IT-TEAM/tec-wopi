@@ -329,4 +329,15 @@ class LocksTable extends Table
             throw new LockOperationFailedException('Lock operation failed ' . $e->getMessage());
         }
     }
+
+    public function checkWopiLock(string $checkLockId, string $fileId)
+    {
+
+        return $this->exists(
+            [
+                'lock_id' => $checkLockId,
+                'file_id' => $fileId
+            ]
+        );
+    }
 }

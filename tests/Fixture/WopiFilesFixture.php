@@ -1,4 +1,5 @@
 <?php
+
 namespace EaglenavigatorSystem\Wopi\Test\Fixture;
 
 use Cake\TestSuite\Fixture\TestFixture;
@@ -50,16 +51,34 @@ class WopiFilesFixture extends TestFixture
 
         //read file content convert to blob
         $fileContent = file_get_contents(TEST_FILE_PATH . 'test.txt');
+
+        $fileContentD = 'Therefore, WOPI locks must:
+
+            Be associated with a single file.
+
+            Contain a lock ID of maximum length 1024 ASCII characters.
+
+            Prevent all changes to that file unless a proper lock ID is provided.
+
+            Expire after 30 minutes unless refreshed. For more information, see RefreshLock.
+
+            Not be associated with a particular user.';
+
+        $target = TEST_FILE_PATH . 'test_d.txt';
+
+        //if file target do not exist, create it
+        //if file target exist, overwrite it
+        file_put_contents($target, $fileContentD);
         $this->records = [
             [
                 'id' => 1,
-                'file_uuid' => 'Lorem ipsum dolor sit amet',
-                'file_name' => 'Lorem ipsum dolor sit amet',
-                'file_size' => 1,
-                'file_extension' => 'Lorem ip',
-                'user_id' => 1,
-                'file_data' => 'Lorem ipsum dolor sit amet',
-                'file_path' => 'Lorem ipsum dolor sit amet',
+                'file_uuid' => '12345678-1234-1234-1234-0d0d0d0e3xcv',
+                'file_name' => 'test_d.txt',
+                'file_size' => filesize(TEST_FILE_PATH . 'test_d.txt'),
+                'file_extension' => 'txt',
+                'user_id' => 495,
+                'file_data' => file_get_contents(TEST_FILE_PATH . 'test.txt'),
+                'file_path' => TEST_FILE_PATH . 'test_d.txt',
                 'version' => 1,
                 'created_at' => 1699632818,
                 'updated_at' => 1699632818,

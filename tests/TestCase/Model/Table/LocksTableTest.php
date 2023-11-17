@@ -1,4 +1,5 @@
 <?php
+
 namespace EaglenavigatorSystem\Wopi\Test\TestCase\Model\Table;
 
 use Cake\ORM\TableRegistry;
@@ -22,10 +23,16 @@ class LocksTableTest extends TestCase
      *
      * @var array
      */
+    /**
+     * Fixtures
+     *
+     * @var array
+     */
     public $fixtures = [
+        'plugin.EaglenavigatorSystem/Wopi.WopiFiles',
         'plugin.EaglenavigatorSystem/Wopi.Locks',
-        'plugin.EaglenavigatorSystem/Wopi.Files',
-        'plugin.EaglenavigatorSystem/Wopi.UserManagements',
+
+        'app.Users',
     ];
 
     /**
