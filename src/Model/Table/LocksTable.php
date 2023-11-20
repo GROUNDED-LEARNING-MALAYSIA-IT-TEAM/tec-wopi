@@ -102,35 +102,36 @@ class LocksTable extends Table
     public function buildRules(RulesChecker $rules)
     {
         $rules->add($rules->existsIn(['file_id'], 'WopiFiles'));
-        $rules->add($rules->existsIn(['lock_id'], 'Locks'));
         $rules->add($rules->existsIn(['locked_by_user_id'], 'UserManagements'));
 
+        $rules->isUnique(['lock_id', 'file_id']);
+
         //lock id must be unique per file
-        $rules->add(
-            //on create
+        // $rules->add(
+        //     //on create
 
-            function ($entity, $options) {
-                $lockId = $entity->lock_id;
-                $fileId = $entity->file_id;
+        //     function ($entity, $options) {
+        //         $lockId = $entity->lock_id;
+        //         $fileId = $entity->file_id;
 
-                $lock = $this->find()
-                    ->where(['lock_id' => $lockId, 'file_id' => $fileId])
-                    ->first();
+        //         $lock = $this->find()
+        //             ->where(['lock_id' => $lockId, 'file_id' => $fileId])
+        //             ->first();
 
-                if (!empty($lock)) {
-                    throw new LockOperationFailedException('Lock id already exists for this file');
-                }
+        //         if (!empty($lock)) {
+        //             throw new LockOperationFailedException('Lock id already exists for this file');
+        //         }
 
-                return true;
-            },
-            'uniqueLockId',
-            [
-                'errorField' => 'lock_id',
-                'message' => 'Lock id already exists for this file',
-                //only on create
-                'on' => 'create',
-            ]
-        );
+        //         return true;
+        //     },
+        //     'uniqueLockId',
+        //     [
+        //         'errorField' => 'lock_id',
+        //         'message' => 'Lock id already exists for this file',
+        //         //only on create
+        //         'on' => 'create',
+        //     ]
+        // );
 
 
         return $rules;
@@ -158,7 +159,7 @@ class LocksTable extends Table
     }
 
 
-    private function generateExpirationDate(): FrozenTime
+    public function generateExpirationDate(): FrozenTime
     {
         $expires = date("Y-m-d H:i:s", strtotime('+1 minute')); // Set expiration time to one minute from now
 
@@ -192,23 +193,34 @@ class LocksTable extends Table
 
 
             // If lock exists and is not expired, check if it's owned by the same user
-            if ($lock && !$this->expirationDateAlreadyExpired($lock->expiration_time)) {
+            if ($lock && $lock->locked === true && !$this->expirationDateAlreadyExpired($lock->expiration_time)) {
                 if ($lock->locked_by_user_id === $userId) {
                     return true; // Lock is already held by this user
                 }
                 return false; // File is locked by another user
             }
 
-            // Create or update the lock
-            $data = [
-                'file_id' => $fileId,
-                'locked' => true,
-                'lock_id' => $this->generateLockId(),
-                'locked_by_user_id' => $userId,
-                'expiration_time' => $this->generateExpirationDate(),
-            ];
+            if (!$lock) {
+                // Create or update the lock
+                $data = [
+                    'file_id' => $fileId,
+                    'locked' => true,
+                    'lock_id' => $this->generateLockId(),
+                    'locked_by_user_id' => $userId,
+                    'expiration_time' => $this->generateExpirationDate(),
+                ];
 
-            $lock = $this->newEntity($data);
+                $lock = $this->newEntity($data);
+            } else {
+                if ($lock->locked === false && $lock->locked_by_user_id === $userId) {
+                    $lock->locked = true;
+                    $lock->lock_id = $this->generateLockId();
+                    $lock->locked_by_user_id = $userId;
+                    $lock->expiration_time = $this->generateExpirationDate();
+                }
+            }
+
+
 
             if ($this->save($lock)) {
                 return true;
@@ -234,8 +246,7 @@ class LocksTable extends Table
     public function unlockFile(int $fileId, int $userId, string $lockId)
     {
         try {
-            $lock = $this->find()
-                ->where(['file_id' => $fileId])
+            $lock = $this->find('all', ['conditions' => ['file_id' => $fileId]])
                 ->first();
 
             if ($lock->lock_id !== $lockId) {
@@ -256,6 +267,10 @@ class LocksTable extends Table
             }
 
             return false;
+        } catch (LockMismatchException $e) {
+            $this->log($e->getMessage(), 'error');
+
+            throw new LockMismatchException('Lock operation failed ' . $e->getMessage());
         } catch (Exception $e) {
             $this->log($e->getMessage(), 'error');
 
@@ -275,23 +290,31 @@ class LocksTable extends Table
     public function refreshLock(int $fileId, int $userId, string $lockId)
     {
         try {
-
-
-            $lock = $this->find()
-                ->where(['file_id' => $fileId, 'lock_id' => $lockId])
+            $lock = $this->find('all', ['conditions' => ['file_id' => $fileId]])
                 ->first();
 
-            if (!$lock || $lock->locked_by_user_id !== $userId) {
-                return false; // Lock not found or is held by another user
+            if ($lock->lock_id !== $lockId) {
+                throw new LockMismatchException('Lock id mismatch');
+            } else {
+                if (!$lock || $lock->locked_by_user_id !== $userId) {
+                    return false; // Lock not found or is held by another user
+                }
+
+                $data['expiration_time'] = $this->generateExpirationDate();
+
+                $lock = $this->patchEntity($lock, $data);
+
+                if ($this->save($lock)) {
+                    return true;
+                } else {
+                    return false;
+                }
             }
+        }catch (LockMismatchException $e) {
 
-            $lock->expiration_time = $this->generateExpirationDate();
+            $this->log($e->getMessage(), 'error');
 
-            if ($this->save($lock)) {
-                return true;
-            }
-
-            return false;
+            throw new LockMismatchException('Lock operation failed ' . $e->getMessage());
         } catch (\Throwable $e) {
 
             $this->log($e->getMessage(), 'error');

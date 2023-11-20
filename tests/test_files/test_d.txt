@@ -1,0 +1,11 @@
+Therefore, WOPI locks must:
+
+            Be associated with a single file.
+
+            Contain a lock ID of maximum length 1024 ASCII characters.
+
+            Prevent all changes to that file unless a proper lock ID is provided.
+
+            Expire after 30 minutes unless refreshed. For more information, see RefreshLock.
+
+            Not be associated with a particular user.
