@@ -14,11 +14,12 @@ use Cake\ORM\Entity;
  * @property string $file_uuid
   * @property string $file_name
  * @property int $file_size
- * @property string $version
  * @property string $file_extension
  * @property int $user_id
  * @property string|resource $file_data
  * @property string $file_path
+ * @property string $version
+ * @property string $user_info
  * @property \Cake\I18n\FrozenTime $created_at
  * @property \Cake\I18n\FrozenTime $updated_at
  *
@@ -44,8 +45,7 @@ class WopiFile extends Entity
         'file_extension' => true,
         'user_id' => true,
         'file_path' => true,
-
-        'version' => true,
+        'user_info' => true,
         'created_at' => true,
         'updated_at' => true,
         'user' => true,
@@ -153,6 +153,76 @@ class WopiFile extends Entity
             return false;
         }
 
+    }
+
+
+    public function isLocked(): bool
+    {
+        return $this->lock->locked;
+    }
+
+    public function getLock(): ?Lock
+    {
+        return $this->lock->lock_id;
+    }
+
+    public function getLockExpiration(): ?FrozenTime
+    {
+        return $this->lock->expiration_time;
+    }
+
+    public function getParents(): array
+    {
+        return $this->parents;
+    }
+
+    public function getChildren(): array
+    {
+        return TableRegistry::getTableLocator()->get('WopiFiles')->find('all', ['conditions' => ['parent_id' => $this->id]])->toArray();
+    }
+
+    public function getParent(){
+
+        return $this->parent_id;
+    }
+
+    //check if the file is in a folder and has a parent
+    public function hasParent(): bool
+    {
+        if($this->checkIfPathIsInFolder()){
+            $this->has_parents = true;
+        } else {
+            $this->has_parents = false;
+        }
+        return $this->has_parents;
+    }
+
+    public function getParentDirectory(): string
+    {
+        return dirname($this->file_path);
+    }
+
+
+    public function checkIfPathIsInFolder()
+    {
+        // Check if the file path is set
+        if (empty($this->file_path)) {
+            // Handle the case where file_path is not set
+            return false;
+        }
+
+        $path = $this->file_path;
+
+        // Check if the path has a parent directory
+        $parentDir = dirname($path);
+
+        // In most file systems, the parent directory of the root is the root itself
+        if ($parentDir === $path || $parentDir === '.' || $parentDir === '/') {
+            // The file is in the root directory and does not have a parent folder
+            return false;
+        }
+
+        return true;
     }
 
 

@@ -4,8 +4,6 @@ namespace EaglenavigatorSystem\Wopi\Controller;
 
 use EaglenavigatorSystem\Wopi\Controller\AppController;
 
-use function PHPSTORM_META\map;
-
 /**
  * DeleteFile Controller
  */
@@ -17,9 +15,11 @@ class DeleteFileController extends AppController
      * @return \Cake\Http\Response|null
      */
     public function index(string $fileId)
+
     {
         $this->request->allowMethod(['post']);
 
+        $this->Wopi->logPost($this->request);
         $this->loadComponent('EaglenavigatorSystem/Wopi.Session', [
             'file' => $this->WopiFiles->get($fileId),
             'user' => $this->Auth->user(),
@@ -82,7 +82,8 @@ class DeleteFileController extends AppController
             return $response;
         }
 
-        $response = $this->response->withHeader('X-WOPI-ItemVersion', $file->version);
+        $response = $this->response->withHeader('X-WOPI-ItemVersion',
+        $file->version);
 
         //delete file
 

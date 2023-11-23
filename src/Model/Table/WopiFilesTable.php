@@ -12,6 +12,7 @@ use Cake\Utility\Security;
 use Cake\Utility\Text;
 use Cake\Validation\Validator;
 use EaglenavigatorSystem\Wopi\Exception\FileHandingException;
+use EaglenavigatorSystem\Wopi\Exception\FileUpdateContentIsEmptyException;
 use EaglenavigatorSystem\Wopi\Model\Entity\WopiFile;
 
 /**
@@ -49,8 +50,8 @@ class WopiFilesTable extends Table
             'joinType' => 'INNER',
             'className' => 'UserManagements',
         ]);
-
-        $this->HasMany(
+        //each file can have only one lock at a time
+        $this->hasOne(
             'Locks',
             [
                 'foreignKey' => 'file_id',
@@ -74,12 +75,17 @@ class WopiFilesTable extends Table
      *
      * @param \Cake\Validation\Validator $validator Validator instance.
      * @return \Cake\Validation\Validator
+     *
      */
     public function validationDefault(Validator $validator)
     {
         $validator
             ->integer('id')
             ->allowEmptyString('id', null, 'create');
+
+            $validator
+            ->integer('parent_id')
+            ->allowEmptyString('parent_id', null, 'create');
 
         $validator
             ->scalar('file_uuid')
@@ -120,6 +126,20 @@ class WopiFilesTable extends Table
             ->requirePresence('file_path', 'create')
             ->notEmptyFile('file_path');
 
+            //user info column max 1024 ascii
+            $validator
+            ->scalar('user_info')
+            ->maxLength('user_info', 1024)
+            ->allowEmptyString('user_info');
+
+            $validator
+            ->boolean('soft_delete')
+            ->allowEmptyFor('soft_delete', true);
+
+            $validator
+            ->dateTime('soft_delete_at')
+            ->allowEmptyDateTime('soft_delete_at', true);
+
         $validator
             ->dateTime('created_at')
             ->notEmptyDateTime('created_at');
@@ -141,6 +161,52 @@ class WopiFilesTable extends Table
     public function buildRules(RulesChecker $rules)
     {
         $rules->add($rules->existsIn(['user_id'], 'UserManagements'));
+
+        //parent id , id must exist in table
+        $rules->add(
+
+            function ($entity, $options) {
+                $parent_id = $entity->parent_id;
+                if ($parent_id) {
+                    $wopiFile = $this->find('all', [
+                        'conditions' => [
+                            'id' => $parent_id
+                        ]
+                    ])->first();
+
+                    if (!$wopiFile) {
+                        return false;
+                    }
+                }
+
+                return true;
+            },
+            'parentExists',
+            [
+                'errorField' => 'parent_id',
+                'message' => 'Parent file does not exist',
+            ]
+        );
+
+        //file must exist in path
+        $rules->add(
+
+            function ($entity, $options) {
+                $file_path = $entity->file_path;
+
+                dump('--check file existsd--' . $file_path);
+                if (!file_exists($file_path)) {
+                    return false;
+                }
+
+                return true;
+            },
+            'fileExists',
+            [
+                'errorField' => 'file_path',
+                'message' => 'File does not exist in path',
+            ]
+        );
 
         return $rules;
     }
@@ -198,6 +264,7 @@ class WopiFilesTable extends Table
     public function createRecord(array $data)
     {
 
+
         $data['file_uuid'] = $this->generateFileuuid();
         $data['file_path'] = $this->generateFilePath($data['file_uuid'], $data['file_extension']);
 
@@ -211,6 +278,7 @@ class WopiFilesTable extends Table
         //create new entity and unlock file_data field
         $wopiFile = $this->newEntity($data, ['accessibleFields' => ['file_data' => true]]);
         $wopiFile->version = $this->generateFileVersion($wopiFile);
+
         $wopiFile = $this->save($wopiFile);
 
         return $wopiFile;
@@ -323,16 +391,20 @@ class WopiFilesTable extends Table
         $delete = function () use ($fileId) {
             $wopiFile = $this->get($fileId);
 
-            $resultDeleteLock = $this->Locks->deleteAll(['file_id' => $fileId]);
-            if (!$resultDeleteLock) {
-                return false;
-            }
-            //if has relation to pivot wopi files, add this line
-            $resultDeletePivot = $this->PivotWopiFilesProjects->deleteAll(['wopi_file_id' => $fileId]);
 
-            if (!$resultDeletePivot) {
-                return false;
+            if($this->Locks->exists(['file_id' => $fileId])){
+                $resultDeleteLock = $this->Locks->deleteAll(['file_id' => $fileId]);
+                if (!$resultDeleteLock) {
+                    return false;
+                }
             }
+            if($this->PivotWopiFilesProjects->exists(['wopi_file_id' => $fileId])){
+                $resultDeletePivot = $this->PivotWopiFilesProjects->deleteAll(['wopi_file_id' => $fileId]);
+                if (!$resultDeletePivot) {
+                    return false;
+                }
+            }
+
 
 
             if (file_exists($wopiFile->file_path)) {
@@ -377,4 +449,85 @@ class WopiFilesTable extends Table
 
         return $this->getConnection()->transactional($rename);
     }
+
+    public function validateName(string $fileName){
+
+        $notunique = $this->find('all')->where(['file_name' => $fileName])->first();
+
+        if ($notunique) {
+            return false;
+        }
+
+        //check length
+        if(strlen($fileName) > 255){
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Update file content
+     *
+     * @param  integer $fileId
+     * @param  array   $data
+     * @return \EaglenavigatorSystem\Wopi\Model\Entity\WopiFile $wopiFile
+     * @throws \EaglenavigatorSystem\Wopi\Exception\FileUpdateContentIsEmptyException
+     */
+    public function updateFileContent(int $fileId, array $data)
+    {
+
+        $update = function () use ($fileId, $data) {
+            //data will be from $this->request->getBody()->getContents())
+
+            $wopiFile = $this->get($fileId);
+
+            if(!$data['file_size'] || !$data['file_data']){
+                throw new FileUpdateContentIsEmptyException('File size or file data is empty', 500, null);
+            }
+
+            $wopiFile->file_size = $data['file_size'];
+
+            $wopiFile->version = $this->generateFileVersion($wopiFile);
+            $wopiFile->file_data = $data['file_data'];
+
+            $wopiFile = $this->save($wopiFile);
+
+            return $wopiFile;
+        };
+
+        return $this->getConnection()->transactional($update);
+    }
+
+
+    public function putUserInfo(int $fileId,array $data){
+
+        $userInfo = $data['user_info'];
+
+        $file = $this->get($fileId);
+
+        $file->user_info = $userInfo;
+
+        $file = $this->save($file);
+
+        if(!$file){
+
+            throw new FileHandingException('Error saving user info', 500, null);
+        }
+
+        return $file;
+
+    }
+
+    public function putFileSoftDelete(int $fileId) {
+
+        $file = $this->get($fileId);
+
+        $file->soft_delete = true;
+        $file->soft_delete_at = date('Y-m-d H:i:s');
+
+        return $this->saveOrFail($file);
+    }
+
+
 }

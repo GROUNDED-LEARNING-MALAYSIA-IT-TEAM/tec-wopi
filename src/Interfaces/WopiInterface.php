@@ -47,7 +47,7 @@ interface WopiInterface
      *
      * @return \Illuminate\Http\JsonResponse must return json response.
      */
-    public function checkFileInfo(string $fileId, string $accessToken, ServerRequest $request);
+    public function checkFileInfo(ServerRequest $request,int $fileId);
 
     /**
      * Retrieve the binary content for the file. including
@@ -59,7 +59,7 @@ interface WopiInterface
      *
      * @return \Symfony\Component\HttpFoundation\StreamedResponse must return binary response.
      */
-    public function getFile(string $fileId, string $accessToken, ServerRequest $request);
+    public function getFile(ServerRequest $request,int $fileId);
 
     /**
      * Updates a file’s binary contents.
@@ -68,7 +68,7 @@ interface WopiInterface
      *
      * @return \Cake\Http\Response
      */
-    public function putFile(string $fileId, string $accessToken, ServerRequest $request);
+    public function putFile(ServerRequest $request,int $fileId);
 
     /**
      * Locks a file for editing by the WOPI client that ServerRequested the lock. To
@@ -79,7 +79,7 @@ interface WopiInterface
      *
      * @return \Cake\Http\Response
      */
-    public function lock(string $fileId, string $accessToken, ServerRequest $request);
+    public function lock(ServerRequest $request,int $fileId);
 
     /**
      * Releases the lock on a file.
@@ -88,7 +88,7 @@ interface WopiInterface
      *
      * @return \Cake\Http\Response
      */
-    public function unlock(string $fileId, string $accessToken, ServerRequest $request);
+    public function unlock(ServerRequest $request,int $fileId);
 
     /**
      * Retrieves a lock on a file. It does not create a new lock. returns the current
@@ -99,7 +99,7 @@ interface WopiInterface
      *
      * @return \Cake\Http\Response
      */
-    public function getLock(string $fileId, string $accessToken, ServerRequest $request);
+    public function getLock(ServerRequest $request,int $fileId);
 
     /**
      * Refreshes the lock on a file by resetting its automatic expiration timer
@@ -110,7 +110,7 @@ interface WopiInterface
      *
      * @return \Cake\Http\Response
      */
-    public function refreshLock(string $fileId, string $accessToken, ServerRequest $request);
+    public function refreshLock(ServerRequest $request,int $fileId);
 
     /**
      * Alias for refreshLock but with diffrent header X-WOPI-OldLock.
@@ -119,7 +119,7 @@ interface WopiInterface
      *
      * @return \Cake\Http\Response
      */
-    public function unlockAndRelock(string $fileId, string $accessToken, ServerRequest $request);
+    public function unlockAndRelock(ServerRequest $request,int $fileId);
 
     /**
      * Delete the file from the host.
@@ -128,7 +128,7 @@ interface WopiInterface
      *
      * @return \Cake\Http\Response
      */
-    public function deleteFile(string $fileId, string $accessToken, ServerRequest $request);
+    public function deleteFile(ServerRequest $request,int $fileId);
 
     /**
      * Renames a file. It should not change file id.
@@ -139,7 +139,7 @@ interface WopiInterface
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function renameFile(string $fileId, string $accessToken, ServerRequest $request);
+    public function renameFile(ServerRequest $request,int $fileId);
 
     /**
      * Creates a new file on the host based on the
@@ -152,7 +152,7 @@ interface WopiInterface
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function putRelativeFile(string $fileId, string $accessToken, ServerRequest $request);
+    public function putRelativeFile(ServerRequest $request,int $fileId);
 
     /**
      * Currently unimplemented.
@@ -163,7 +163,7 @@ interface WopiInterface
      *
      * @return \Cake\Http\Response
      */
-    public function enumerateAncestors(string $fileId, string $accessToken, ServerRequest $request);
+    public function enumerateAncestors(ServerRequest $request,int $fileId);
 
     /**
      * Stores basic user information on the host. Hosts must store
@@ -177,5 +177,5 @@ interface WopiInterface
      *
      * @return \Cake\Http\Response
      */
-    public function putUserInfo(string $fileId, string $accessToken, ServerRequest $request);
+    public function putUserInfo(ServerRequest $request,int $fileId);
 }

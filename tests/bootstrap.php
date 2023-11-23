@@ -1,4 +1,7 @@
 <?php
+
+use Cake\Core\Plugin;
+
 /**
  * Test suite bootstrap for EaglenavigatorSystem/Wopi.
  *
@@ -39,7 +42,8 @@ define('CORE_PATH', CAKE_CORE_INCLUDE_PATH . DS);
 define('CAKE', CORE_PATH . 'src' . DS);
 
 //TEST_FILE_PATH is in tests folder of plugin
-define('TEST_FILE_PATH', TESTS . DS . 'test_files' . DS);
+//define('TEST_FILE_PATH_TEST', ROOT . DS . 'tests'  . DS . 'test_files' . DS);
+define('BOOTSTRAP_LOADED', true);
 
 require_once $root . '/vendor/autoload.php';
 
@@ -61,4 +65,16 @@ if (file_exists($root . '/config/wopi.php')) {
     require $root . '/config/wopi.php';
 
     return;
+}
+
+
+//init router
+\Cake\Routing\Router::reload();
+
+Plugin::getCollection()->add(new \EaglenavigatorSystem\Wopi\Plugin([
+    'path' => dirname(dirname(__FILE__)) . DS,
+    'routes' => true
+]));
+if (file_exists($root . '/config/bootstrap.php')) {
+    require $root . '/config/bootstrap.php';
 }

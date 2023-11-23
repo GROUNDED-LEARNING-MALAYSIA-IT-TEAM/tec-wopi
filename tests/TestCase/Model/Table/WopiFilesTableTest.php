@@ -14,6 +14,7 @@ use EaglenavigatorSystem\Wopi\Model\Table\WopiFilesTable;
  */
 class WopiFilesTableTest extends TestCase
 {
+    //TEST_FILE_PATH is in tests/test_files folder of plugin
     /**
      * Test subject
      *
@@ -29,9 +30,16 @@ class WopiFilesTableTest extends TestCase
     public $fixtures = [
         'plugin.EaglenavigatorSystem/Wopi.WopiFiles',
         'plugin.EaglenavigatorSystem/Wopi.Locks',
+        'plugin.EaglenavigatorSystem/Wopi.PivotWopiFilesProjects',
 
         'app.Users',
     ];
+
+    public string $originalContentTest = '"UMECH showed genuine interest in conducting business in Penang and was the sole company expressing such interest at the expo.
+
+    "Prior to the expo, materials and promotions (for) the upcoming projects had... received approval from the state government and PDC Board," he said in reply to a question from Lee Khai Loon (PH-Machang Bubok).
+
+    Chow said the selection of the company was done in a lengthy and transparent process based on established criteria.';
 
     /**
      * setUp method
@@ -42,9 +50,31 @@ class WopiFilesTableTest extends TestCase
     {
         parent::setUp();
         //load plugin
+        //it is 2 level up from this file
+        //so it is in plugins/EaglenavigatorSystem/Wopi
+        define('TEST_FILE_PATH_TEST', dirname(dirname(dirname(dirname(__FILE__)))) . DS . 'test_files' . DS);
+
         $this->loadPlugins(['EaglenavigatorSystem/Wopi']);
         $config = TableRegistry::getTableLocator()->exists('WopiFiles') ? [] : ['className' => WopiFilesTable::class];
         $this->WopiFiles = TableRegistry::getTableLocator()->get('WopiFiles', $config);
+
+        $fileTestContent = 'From this configuration, there are no apparent errors or issues. The bootstrap file is correctly specified, and the test suite is properly defined. If you are experiencing issues or errors when running tests, the problem might be elsewhere, such as in the actual test code, the bootstrap file, or the environment setup.
+
+        ';
+
+        $filetest1 = TEST_FILE_PATH_TEST . 'test.txt';
+
+        //if filetest1 do not exist, create it
+        if (!file_exists($filetest1)) {
+            touch($filetest1);
+            file_put_contents($filetest1, $fileTestContent);
+
+        } else {
+
+            //if filetest1 exist, overwrite it
+
+            file_put_contents($filetest1, $fileTestContent);
+        }
     }
 
     /**
@@ -57,6 +87,31 @@ class WopiFilesTableTest extends TestCase
         unset($this->WopiFiles);
         $this->getTableLocator()->clear();
         $this->removePlugins(['EaglenavigatorSystem/Wopi']);
+
+        $fileUpdateTarget = TEST_FILE_PATH_TEST . 'test_f.txt';
+
+        $fileTestContent = 'From this configuration, there are no apparent errors or issues. The bootstrap file is correctly specified, and the test suite is properly defined. If you are experiencing issues or errors when running tests, the problem might be elsewhere, such as in the actual test code, the bootstrap file, or the environment setup.
+
+        ';
+
+        $filetest1 = TEST_FILE_PATH_TEST . 'test.txt';
+
+
+        //update the content to original
+        file_put_contents($fileUpdateTarget, $this->originalContentTest);
+
+        //if filetest1 do not exist, create it
+        if (!file_exists($filetest1)) {
+            touch($filetest1);
+            file_put_contents($filetest1, $fileTestContent);
+
+        } else {
+
+            //if filetest1 exist, overwrite it
+
+            file_put_contents($filetest1, $fileTestContent);
+        }
+
         parent::tearDown();
     }
 
@@ -120,7 +175,7 @@ class WopiFilesTableTest extends TestCase
 
 
         //get file content as stream
-        $filecontent = file_get_contents(TEST_FILE_PATH . 'test.txt');
+        $filecontent = file_get_contents(TEST_FILE_PATH_TEST . 'test.txt');
 
         $wopiFile = $this->WopiFiles->getWopiFile($file_uuid);
         //write file_data to a stream
@@ -188,8 +243,8 @@ class WopiFilesTableTest extends TestCase
      */
     public function testCreateRecord()
     {
-        $source = TEST_FILE_PATH . 'test_b.txt';
-
+        //source is file path
+        $source = TEST_FILE_PATH_TEST . 'test_b.txt';
         $data = [
             'file_name' => 'test_b.txt',
             'user_id' => 495,
@@ -199,6 +254,7 @@ class WopiFilesTableTest extends TestCase
         ];
 
         $wopiFile = $this->WopiFiles->createRecord($data);
+
 
         $this->assertInstanceOf('EaglenavigatorSystem\Wopi\Model\Entity\WopiFile', $wopiFile);
         $this->assertNotEmpty($wopiFile->file_uuid);
@@ -218,7 +274,7 @@ class WopiFilesTableTest extends TestCase
     {
 
         $id = 2;
-        $source = TEST_FILE_PATH . 'test_b.txt';
+        $source = TEST_FILE_PATH_TEST . 'test_b.txt';
         $data = [
             'file_name' => 'test_b.txt',
             'user_id' => 495,
@@ -274,7 +330,7 @@ class WopiFilesTableTest extends TestCase
     public function testGenerateFileVersion()
     {
 
-        $source = TEST_FILE_PATH . 'test_c.txt';
+        $source = TEST_FILE_PATH_TEST . 'test_c.txt';
         $data = [
             'file_name' => 'test_c.txt',
             'user_id' => 495,
@@ -329,15 +385,118 @@ class WopiFilesTableTest extends TestCase
 
             Not be associated with a particular user.';
 
-        $target = TEST_FILE_PATH . 'test_d.txt';
+        $target = TEST_FILE_PATH_TEST . 'test_d.txt';
 
         //if file target do not exist, create it
+        if (!file_exists($target)) {
+            touch($target);
+            file_put_contents($target, $fileContent);
+
+        } else {
+
         //if file target exist, overwrite it
+
         file_put_contents($target, $fileContent);
+        }
+
 
 
         $result = $this->WopiFiles->deleteFile($id);
 
         $this->assertTrue($result);
+    }
+
+    public function testUpdateFileContent()
+    {
+        $original = 'UMECH showed genuine interest in conducting business in Penang and was the sole company expressing such interest at the expo.
+
+        "Prior to the expo, materials and promotions (for) the upcoming projects had... received approval from the state government and PDC Board," he said in reply to a question from Lee Khai Loon (PH-Machang Bubok).
+
+        Chow said the selection of the company was done in a lengthy and transparent process based on established criteria.';
+
+        $changed  = 'The police have recorded Umno supreme council member Isham Jalil\'s statement after Dr Siti Mastura Muhammad claimed she obtained information about DAP\'s supposed links with communist leaders from a Barisan Nasional campaign leaflet.
+
+        "Bukit Aman called me to ask about Siti Mastura\'s case. I\'m not really familiar with that issue but the police suddenly rang me up.
+
+        "The police said that Siti Mastura claimed that her information was based on a leaflet by BN Communications,\" said Isham in a video posted on Facebook on Saturday (Nov 18).
+
+        He said while he was the former Umno information chief during GE15, the party and Barisan were two separate entities.
+
+        "I don\'t think Barisan published this. Whatever it is, let the police investigate," said Isham.
+        He also advised Siti Mastura to cooperate with the police.';
+
+        $target = TEST_FILE_PATH_TEST . 'test_f.txt';
+
+
+        //use $changed, create tempfile
+        $tempFile = tmpfile();
+        fwrite($tempFile, $changed);
+
+        //get the temp file path
+        $metaData = stream_get_meta_data($tempFile);
+        $tempFilePath = $metaData['uri'];
+        //size
+        $size = filesize($tempFilePath);
+
+        //get content
+        $content = file_get_contents($tempFilePath);
+
+        //close the temp file
+
+        //use size and content to override original
+
+        $id = 2;
+
+        $data = [
+            'file_size' => $size,
+            'file_data' => $content,
+        ];
+
+        $result = $this->WopiFiles->updateFileContent($id, $data);
+
+        dump($result);
+
+
+        //get file content as stream
+        $filecontent = file_get_contents($result->file_path);
+
+        //write file_data to a stream
+        //file data is a blob, so write it out to a temp file
+        // Create a temporary file
+        $tempfile = tmpfile();
+
+        // Check if file_data is a resource and not a string
+        if (is_resource($result->file_data)) {
+            // If it's a stream, read the content and then write it to the temp file
+            $streamContent = stream_get_contents($result->file_data);
+
+            $this->assertEquals($changed, $streamContent);
+        }
+
+        $this->assertInstanceOf('EaglenavigatorSystem\Wopi\Model\Entity\WopiFile', $result);
+
+
+    }
+
+
+    public function testPutUserInfo()
+    {
+        $data = [
+            'user_info' => 'zH=HmN)0EnU]5a)ead48w?AWWap{]|{KUq*cHF.?SM]WST{_2uMkQ4c\'Fg)\\Z?`f6Hca16jBk:)H*m%>M[O,s3UVT\'y$9Q/69P%X<yvkmZgruh$j1#Ck;~E)\'kh0q$c\"P(|2kG\"^q3v\\IO&F?q|Qv+@p>i]b9=UuDX+dmJa@vL4)n[!x3(c7D\'Zf|&fW|6`i1KM)9fC5(VE0>,kV,Xj)foPP7\\s\'zx@AE;b8z,~OqIaFXExiABWeHkksQ<qXwK#]mru>\'=W?11G&i7;vc)Z3M*ebY^*S-##!<a|Bs#:<1pTK+kn<t;+B{Y%_>a-u^DHN-C>fc[/Cjb=KM;,\\`+S/nT4Q:/=\'4xF8L%NSU\\kiVp8RaaU7(!bajD&ZZkK$~Z:F^&I\\$CTNx~s\'FH]#)#\"5D|-0%9Ojs*CRD1@$D*<sQ2AzdY\\Doi@bl?0/7,PYc7MtCW;MG/.qlz_z].!p:W9>[&oEU*\\Y:\"!IiMSA4`jEIAYXrpMj;Kk\'wy>:ug.1lo=--5b|VR|_qt{j;;\'{b7\"-2M3B$PaIU>a#;QFw,YVJk[j\"7&~?}/UXdz'
+            ];
+        $result = $this->WopiFiles->putUserInfo(2, $data);
+
+        $this->assertInstanceOf('EaglenavigatorSystem\Wopi\Model\Entity\WopiFile', $result);
+
+
+    }
+
+    public function testPutFileSoftDelete()
+    {
+        $result = $this->WopiFiles->putFileSoftDelete(3);
+
+        $this->assertInstanceOf('EaglenavigatorSystem\Wopi\Model\Entity\WopiFile', $result);
+        $this->assertTrue($result->soft_delete);
+        $this->assertNotEmpty($result->soft_delete_at);
     }
 }

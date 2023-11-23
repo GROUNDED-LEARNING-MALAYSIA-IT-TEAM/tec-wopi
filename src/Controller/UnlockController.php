@@ -3,6 +3,8 @@
 namespace EaglenavigatorSystem\Wopi\Controller;
 
 use EaglenavigatorSystem\Wopi\Controller\AppController;
+use EaglenavigatorSystem\Wopi\Exception\LockOperationFailedException;
+use EaglenavigatorSystem\Wopi\Exception\LockMismatchException;
 use Exception;
 
 /**
@@ -19,10 +21,24 @@ class UnlockController extends AppController
     {
         try {
             //method only accepts post requests
+
+            //read lock
+
             $this->request->allowMethod(['post']);
             $this->loadComponent('Wopi');
-            $this->request->allowMethod(['post']);
             $this->autoRender = false;
+            $this->Wopi->logPost($this->request);
+            $lockFromHeader = $this->request->getHeader('X-WOPI-Lock');
+            if (!$lockFromHeader) {
+
+                $this->response = $this->response->withStatus(400);
+                $this->response = $this->response->withHeader('X-WOPI-LockFailureReason', 'X-WOPI-Lock header not provided');
+
+                return $this->response->withHeader('Content-Type', 'application/json')
+                    ->withStringBody(json_encode([
+                        'message' => 'X-WOPI-Lock header not provided'
+                    ]));
+            }
 
             $userId = $this->Auth->user('id');
             //check token validity
@@ -89,12 +105,12 @@ class UnlockController extends AppController
 
             $file = $this->WopiFiles->getById($fileId);
 
-            if ($lock) {
-                $this->response = $this->response->withHeader('X-WOPI-Lock', $lock->lock);
+            if ($lock->locked === false) {
+                $this->response = $this->response->withHeader('X-WOPI-Lock', '');
                 $this->response = $this->response->withHeader('X-WOPI-ItemVersion', $file->version);
                 $this->response = $this->response->withStatus(200);
             } else {
-                $this->response = $this->response->withHeader('X-WOPI-LockFailureReason', 'File already locked');
+                $this->response = $this->response->withHeader('X-WOPI-LockFailureReason', 'File already unlocked');
                 $this->response = $this->response->withStatus(409);
 
                 $message = 'File already locked';
@@ -103,6 +119,24 @@ class UnlockController extends AppController
                     'message' => $message
                 ]));
             }
+        } catch (LockMismatchException $e) {
+
+            $this->response = $this->response->withStatus(409);
+            $this->response = $this->response->withHeader('X-WOPI-LockFailureReason', 'Lock operation failed ' . $e->getMessage());
+            $this->response = $this->response->withHeader('Content-Type', 'application/json');
+
+            $this->response = $this->response->withStringBody(json_encode([
+                'message' => $e->getMessage()
+            ]));
+        } catch (LockOperationFailedException $e) {
+
+            $this->response = $this->response->withStatus(409);
+            $this->response = $this->response->withHeader('X-WOPI-LockFailureReason', 'Lock operation failed ' . $e->getMessage());
+            $this->response = $this->response->withHeader('Content-Type', 'application/json');
+
+            $this->response = $this->response->withStringBody(json_encode([
+                'message' => $e->getMessage()
+            ]));
         } catch (Exception $e) {
 
             $this->response = $this->response->withStatus(500);

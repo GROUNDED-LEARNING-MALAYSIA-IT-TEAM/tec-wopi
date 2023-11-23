@@ -2,6 +2,7 @@
 
 namespace EaglenavigatorSystem\Wopi\Model\Table;
 
+use Cake\Core\Configure;
 use Cake\I18n\FrozenTime;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
@@ -353,6 +354,13 @@ class LocksTable extends Table
         }
     }
 
+    /**
+     * Checks if a lock exists.
+     *
+     * @param  string $checkLockId
+     * @param  string $fileId
+     * @return bool True if lock exists, false otherwise.
+     */
     public function checkWopiLock(string $checkLockId, string $fileId)
     {
 
@@ -362,5 +370,48 @@ class LocksTable extends Table
                 'file_id' => $fileId
             ]
         );
+    }
+
+    /**
+     * Checks if a lock is similar to the reference lock.
+     *
+     * @param  string $reference
+     * @param  string $check
+     * @return bool True if lock is similar, false otherwise.
+     */
+    public function compareLockId(string $reference, string $check)
+    {
+        return $reference === $check;
+    }
+
+
+
+
+    public function checkIfPutFileOperationCanContinue(string $fileId)
+    {
+        $lock = $this->find()
+            ->where(['file_id' => $fileId])
+            ->first();
+
+        if (!$lock) {
+            return true;
+        }
+
+        if ($lock->locked === false) {
+            return true;
+        }
+
+        //CHECK FILE SIZE
+        $file = $this->WopiFiles->getById($fileId);
+
+        if ($file->size > 0 || $file->size === null) {
+            return false;
+        } elseif($file->size === 0) {
+            return true;
+        } elseif ($file->size > Configure::read('Wopi.max_file_size')) {
+            return false;
+        }
+
+        return false;
     }
 }

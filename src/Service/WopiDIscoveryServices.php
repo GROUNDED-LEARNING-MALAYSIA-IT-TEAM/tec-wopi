@@ -47,13 +47,13 @@ class WopiDiscoveryService
         return $simpleXmlElement;
     }
 
-    public function discoverAction(string $extension, string $name = 'edit'): ?array
+    public static function discoverAction(string $extension, string $name = 'edit'): ?array
     {
         // Implement logic to query XML data for actions based on extension and name
         // Use CakePHP's XML querying functions
 
         // Example code to query XML data:
-        $action = $this->xmlData->xpath("//net-zone/app/action[@ext='{$extension}' and @name='{$name}']");
+        $action = self::$xmlData->xpath("//net-zone/app/action[@ext='{$extension}' and @name='{$name}']");
 
         if (!$action) {
             return null;
@@ -67,9 +67,9 @@ class WopiDiscoveryService
      * @param string $extension
      * @return array
      */
-    public function discoverExtension(string $extension): array
+    public static function discoverExtension(string $extension): array
     {
-        $appElements = $this->queryXPath('//net-zone/app');
+        $appElements = self::queryXPath('//net-zone/app');
 
         $extensions = [];
 

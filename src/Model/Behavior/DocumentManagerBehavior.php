@@ -48,6 +48,9 @@ class DocumentManagerBehavior extends Behavior implements DocumentManager
             return false;
         }
 
+        //delete temp file
+        unlink($file);
+
         return $result;
     }
 }

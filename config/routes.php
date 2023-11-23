@@ -3,69 +3,68 @@
 use Cake\Routing\RouteBuilder;
 use Cake\Routing\Router;
 use Cake\Routing\Route\DashedRoute;
+use EaglenavigatorSystem\Wopi\Middleware\WopiDiscoveryMiddleware;
+use EaglenavigatorSystem\Wopi\Middleware\ValidateProofMiddleware;
+use EaglenavigatorSystem\Wopi\Middleware\WopiOperationMiddleware;
+
 
 Router::plugin(
     'EaglenavigatorSystem/Wopi',
     ['path' => '/wopi'],
     function (RouteBuilder $routes) {
-        //-- use prefix wopi
 
+        $routes->registerMiddleware('wopiDiscovery', new WopiDiscoveryMiddleware());
+        $routes->registerMiddleware('validateProof', new ValidateProofMiddleware());
+        $routes->registerMiddleware('wopiOperation', new WopiOperationMiddleware());
 
-            /**
-             * url : /wopi/files/{fileId} - get request .
-             * - routing in router , user prefix `wopi` and controller `CheckFileInfo` and action `index`
-             * - response must be in json format
-             */
-            $routes->connect(
-                '/files/:fileId',
-                [
-                    'controller' => 'Files',
-                    'action' => 'index',
-                ]
-            )->setMethods(['GET'])
-            ->setPass(['fileId']);
-            /**
-             * url : /wopi/files/{fileId}/contents - get request .
-             * - routing in router , user prefix `wopi` and controller `GetFile` and action `getFile`
-             * - response must be in json format
-             */
-            $routes->connect(
-                '/files/:fileId/contents',
-                [
-                    'controller' => 'Files',
-                    'action' => 'index',
-                ])->setMethods(['GET'])
-                ->setPass(['fileId']);
+        $routes->middlewareGroup('wopi', ['wopiDiscovery', 'validateProof', 'wopiOperation']);
 
-                //edit action
-                $routes->connect(
-                    '/files/:fileId/contents',
-                    [
-                        'controller' => 'Files',
-                        'action' => 'index',
-                    ])->setMethods(['POST'])
-                    ->setPass(['fileId']);
+        // Define your routes here
+        $routes->connect(
+            '/files/:file_id',
 
-                        //GET /wopi/files/(file_id) - CheckFileInfo
-                        //GET /wopi/files/(file_id)/contents - GetFile
-
-                        //POST (/wopi/files/(file_id) - LOCK
-                        //POST /wopi/files/(file_id) - GET_LOCK
-                        //POST /wopi/files/(file_id) - REFRESH_LOCK
-                        //POST /wopi/files/(file_id) - UNLOCK
-                        //POST /wopi/files/(file_id) - UNLOCK_AND_RELOCK
-                        //POST /wopi/files/(file_id) - PUT_RELATIVE
-                        //POST /wopi/files/(file_id) - DELETE
-                        //POST /wopi/files/(file_id) - PUT_USER_INFO
-                        //POST /wopi/files/(file_id) - PUT_FILE
-                        //POST /wopi/files/(file_id) - RENAME_FILE
-                        //POST /wopi/files/(file_id) - PUT_RELATIVE
-                        //POST /wopi/files/(file_id)  RenameFile
-
-
-
-
-
+            [
+                'controller' => 'CheckFileInfo',
+                'action' => 'index'
+            ],
+            [
+                'pass' => ['file_id'],
+                'name' => 'checkFileInfo'
+            ]
+        );
+        $routes->connect(
+            '/files/:file_id/contents',
+            [
+                'controller' => 'GetFile',
+                'action' => 'index'
+            ],
+            [
+                'pass' => ['file_id'],
+                'name' => 'getFile'
+            ]
+        );
+        $routes->connect(
+            '/files/:file_id/contents',
+            [
+                'controller' => 'PutFile',
+                'action' => 'index'
+            ],
+            [
+                'pass' => ['file_id'],
+                'name' => 'putFile'
+            ]
+        )->setMethods(['POST']);
+        $routes->connect(
+            '/files/:file_id',
+            [
+                'controller' => 'Files',
+                'action' => 'index'
+            ],
+            [
+                'pass' => ['file_id'],
+                'name' => 'postRouter'
+            ]
+        )->setMethods(['POST']);
 
         $routes->fallbacks(DashedRoute::class);
     }

@@ -10,5 +10,6 @@ return [
     'default_user' => 'creator',
     'versioning' => 'increment',
     'valid_versioning_type' => ['increment', 'timestamp', 'hash'],
+    'max_file_size' => 100000000, // 100 MB in bytes
   ],
 ];
